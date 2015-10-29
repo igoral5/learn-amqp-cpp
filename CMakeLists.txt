@@ -1,4 +1,4 @@
-project(amqp-cpp CXX)
+project(learn-amqp-cpp CXX)
 
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
@@ -7,7 +7,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "-ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 add_executable(consumer consumer.cpp)
-# target_link_libraries(consumer rdkafka++ rdkafka)
 
-add_executable(producer producer.cpp)
-# target_link_libraries(producer rdkafka++ rdkafka)
+add_executable(producer producer.cpp asiohandler.h asiohandler.cpp)
+target_link_libraries(producer boost_system pthread amqpcpp)

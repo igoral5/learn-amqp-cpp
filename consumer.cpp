@@ -13,16 +13,16 @@ int
 main(int argc, char *argv[])
 try
 {
-	std::cout << "Consumer" << std::endl;
-	return EXIT_SUCCESS;
+    std::cout << "Consumer" << std::endl;
+    return EXIT_SUCCESS;
 }
 catch (const std::exception& e)
 {
-	std::cerr << "Exception: " << e.what() << std::endl;
+    std::cerr << "Exception: " << e.what() << std::endl;
     return EXIT_FAILURE;
 }
 catch(...)
 {
-	std::cerr << "Unknown exceprion" << std::endl;
+    std::cerr << "Unknown exceprion" << std::endl;
     return EXIT_FAILURE;
 }
