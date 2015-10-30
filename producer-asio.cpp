@@ -26,8 +26,6 @@ public:
             uint16_t port,
             const std::string& message,
             size_t count) :
-                m_io(io),
-                m_timer(io, boost::posix_time::milliseconds(10000)),
                 m_handler(io),
                 m_connection(&m_handler, AMQP::Login("guest", "guest"), "/"),
                 m_channel(&m_connection),
@@ -54,14 +52,7 @@ private:
             }
             m_channel.close();
         }
-
     }
-    void handle_timer(const boost::system::error_code& e)
-    {
-        m_io.stop();
-    }
-    boost::asio::io_service& m_io;
-    boost::asio::deadline_timer m_timer;
     AsioHandler m_handler;
     AMQP::Connection m_connection;
     AMQP::Channel m_channel;
