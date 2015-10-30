@@ -1,5 +1,5 @@
 /**
- * @file producer.cpp
+ * @file producer-asio.cpp
  * @author igor
  * @date 26 окт. 2015 г.
  */
@@ -52,9 +52,9 @@ private:
                 m_channel.publish("", "hello", oss.str());
                 std::cout << "Send: '" << oss.str() << "'" << std::endl;
             }
+            m_channel.close();
         }
-        m_channel.close();
-        m_connection.close();
+
     }
     void handle_timer(const boost::system::error_code& e)
     {
@@ -75,17 +75,10 @@ try
 {
     if (argc < 5)
     {
-        std::cerr << "Usage: producer <host> <port> <message> <count>" << std::endl;
+        std::cerr << "Usage: producer-asio <host> <port> <message> <count>" << std::endl;
         return EXIT_FAILURE;
     }
-    uint64_t port = 5672;
-    try
-    {
-        port = boost::lexical_cast<uint64_t>(argv[2]);
-    }
-    catch(...)
-    {
-    }
+    uint64_t port = boost::lexical_cast<uint64_t>(argv[2]);
     boost::asio::io_service io;
     Producer producer(io, argv[1], port, argv[3], boost::lexical_cast<uint64_t>(argv[4]));
     io.run();

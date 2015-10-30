@@ -1,5 +1,5 @@
 /**
- * @file consumer.cpp
+ * @file consumer-asio.cpp
  * @author igor
  * @date 26 окт. 2015 г.
  */
