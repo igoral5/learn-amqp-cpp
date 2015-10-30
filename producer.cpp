@@ -53,10 +53,8 @@ private:
                 std::cout << "Send: '" << oss.str() << "'" << std::endl;
             }
         }
-        m_timer.async_wait(boost::bind(
-                &Producer::handle_timer,
-                this,
-                boost::asio::placeholders::error));
+        m_channel.close();
+        m_connection.close();
     }
     void handle_timer(const boost::system::error_code& e)
     {
