@@ -24,39 +24,73 @@ public:
     Producer(boost::asio::io_service& io,
             const std::string& host,
             uint16_t port,
+            const std::string& exchange,
+            const std::string& routing_key,
             const std::string& message,
             size_t count) :
                 m_handler(io),
-                m_connection(&m_handler, AMQP::Login("guest", "guest"), "/"),
+                m_connection(&m_handler),
                 m_channel(&m_connection),
+                m_exchange(exchange),
+                m_routing_key(routing_key),
                 m_message(message),
-                m_count(count)
+                m_max(count),
+                m_count(0)
+
     {
         m_handler.connect(host, port);
         m_channel.onReady(boost::bind(
                 &Producer::handle_channel_ready,
                 this));
+        m_channel.onError(boost::bind(
+                &Producer::handle_channel_error,
+                this,
+                _1));
+
     }
     virtual ~Producer() noexcept = default;
 private:
+    void handle_channel_error(const char* message)
+    {
+        std::cerr << "error channel: " << message << std::endl;
+    }
     void handle_channel_ready()
     {
         if (m_handler.connected())
         {
-            for (size_t i = 0; i < m_count; i++)
+            m_channel.declareQueue("hello", AMQP::durable);
+            m_channel.onReady(boost::bind(
+                    &Producer::send_message,
+                    this));
+        }
+    }
+    void send_message()
+    {
+        if (m_count < m_max)
+        {
+            std::ostringstream oss;
+            oss << m_count << " - " << m_message;
+            if (m_channel.publish(m_exchange, m_routing_key, oss.str()))
             {
-                std::ostringstream oss;
-                oss << i << " - " << m_message;
-                m_channel.publish("", "hello", oss.str());
                 std::cout << "Send: '" << oss.str() << "'" << std::endl;
+                m_count++;
+                m_channel.onReady(boost::bind(
+                        &Producer::send_message,
+                        this));
             }
-            m_channel.close();
+        }
+        else
+        {
+            m_connection.close();
         }
     }
     AsioHandler m_handler;
     AMQP::Connection m_connection;
     AMQP::Channel m_channel;
-    std::string m_message;
+    const std::string m_exchange;
+    const std::string m_routing_key;
+    const std::string m_message;
+    const size_t m_max;
     size_t m_count;
 };
 
@@ -64,14 +98,30 @@ int
 main(int argc, char *argv[])
 try
 {
-    if (argc < 5)
+    if (argc < 6)
     {
-        std::cerr << "Usage: producer-asio <host> <port> <message> <count>" << std::endl;
+        std::cerr << "Usage: producer-asio <host> <port> <exchange> <routing_key> <message> <count>" << std::endl;
         return EXIT_FAILURE;
     }
-    uint64_t port = boost::lexical_cast<uint64_t>(argv[2]);
+    const std::string host(argv[1]);
+    uint16_t port = boost::lexical_cast<uint16_t>(argv[2]);
+    const std::string exchange(argv[3]);
+    const std::string routing_key(argv[4]);
+    const std::string message(argv[5]);
+    //size_t count = boost::lexical_cast<size_t>(argv[6]);
     boost::asio::io_service io;
-    Producer producer(io, argv[1], port, argv[3], boost::lexical_cast<uint64_t>(argv[4]));
+    //Producer producer(io, host, port, exchange, routing_key, message, count);
+    AsioHandler handler(io);
+    handler.connect(host, port);
+    AMQP::Connection connection(&handler);
+    AMQP::Channel channel(&connection);
+    channel.onReady([&]()
+        {
+            channel.declareQueue(routing_key, AMQP::durable);
+            channel.publish(exchange, routing_key, message);
+            std::cout << "[x] Sent " << message << std::endl;
+            connection.close();
+        });
     io.run();
     return EXIT_SUCCESS;
 }
